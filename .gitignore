@@ -36,4 +36,7 @@ out/
 ### VS Code ###
 .vscode/
 
+
+### My Ignore ###
 .DS_Store
+src/main/resources/application-secret.yml
