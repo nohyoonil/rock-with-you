@@ -22,4 +22,9 @@ public class LoginController {
     public String home() {
         return "hello";
     }
+
+    @GetMapping("/api/test")
+    public String test() {
+        return "api test";
+    }
 }
