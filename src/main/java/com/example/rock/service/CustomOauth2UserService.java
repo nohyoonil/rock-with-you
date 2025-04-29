@@ -24,12 +24,11 @@ public class CustomOauth2UserService extends DefaultOAuth2UserService {
         OAuth2User oAuth2User = super.loadUser(userRequest);
         Map<String, Object> attributes = oAuth2User.getAttributes();
 
-        Map<String, Object> kakaoAccount = (Map<String, Object>) attributes.get("kakao_account");
-        Map<String, Object> profile = (Map<String, Object>) kakaoAccount.get("profile");
+        Map<String, Object> properties = (Map<String, Object>) attributes.get("properties");
 
         Long socialId = Long.valueOf(String.valueOf(attributes.get("id"))); // 카카오 고유 id
-        String name = (String) profile.get("nickname");
-        String pfp = (String) kakaoAccount.get("profile_image");
+        String name = (String) properties.get("nickname");
+        String pfp = (String) properties.get("profile_image");
 
         Member member = memberRepository.findById(socialId).orElseGet(() ->
                 memberRepository.save(Member.builder()
