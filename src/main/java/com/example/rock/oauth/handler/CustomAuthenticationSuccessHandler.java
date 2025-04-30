@@ -36,6 +36,6 @@ public class CustomAuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         cookie.setPath("/");
         response.addCookie(cookie);
 
-        super.onAuthenticationSuccess(request, response, authentication);
+        response.sendRedirect("/");
     }
 }

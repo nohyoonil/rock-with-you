@@ -1,6 +1,5 @@
 package com.example.rock.jwt;
 
-import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Header;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -12,8 +11,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.Date;
@@ -24,13 +25,15 @@ public class JwtUtil {
 
     @Value("${jwt.issuer}")
     private String issuer;
-    @Value("{${jwt.secretKey}")
-    private String secretKey;
+    @Value("{${jwt.secret}")
+    private String secret;
     private SecretKey key;
+    private final static String TOKEN_PREFIX = "Bearer ";
+
 
     @PostConstruct
     public void init() {
-        this.key = Keys.hmacShaKeyFor(secretKey.getBytes());
+        this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
     public String generateToken(String socialId, String name, String pfp, Duration expiredAt) {
@@ -44,30 +47,31 @@ public class JwtUtil {
                 .setSubject(socialId)
                 .claim("name", name)
                 .claim("pfp", pfp)
-                .signWith(SignatureAlgorithm.HS256, key)
+                .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
     }
-    public boolean validToken(String token) {
+    public boolean validateToken(String token) {
+        if (!StringUtils.hasText(token) || !token.startsWith("Bearer ")) return false;
+        token = getRemoveBearerToken(token);
         try {
-            Jwts.parser().setSigningKey(key).parseClaimsJws(token);
+            Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
             return true;
         } catch (Exception e) { // 복호화 과정에서 에러 발생 시 유효하지 않은 토큰
             return false;
         }
     }
 
-    public Authentication getAuthentication(String jwtToken) {
-        Claims claims = getClaims(jwtToken);
-        Set<SimpleGrantedAuthority> authorities = Collections.singleton(new SimpleGrantedAuthority("ROLE_USER"));
-
-        return new UsernamePasswordAuthenticationToken(
-                new User(claims.getSubject(), "", authorities), jwtToken, authorities);
+    private String getRemoveBearerToken(String token) {
+        return token.substring(7); // "Bearer " 제거
     }
 
-    private Claims getClaims(String token) {
-        return Jwts.parser()
+    public Long getUserId(String token) {
+        token = getRemoveBearerToken(token);
+        return Long.valueOf(Jwts.parserBuilder()
                 .setSigningKey(key)
+                .build()
                 .parseClaimsJws(token)
-                .getBody();
+                .getBody()
+                .getSubject());
     }
 }

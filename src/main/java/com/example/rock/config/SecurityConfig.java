@@ -2,7 +2,8 @@ package com.example.rock.config;
 
 import com.example.rock.jwt.JwtFilter;
 import com.example.rock.oauth.handler.CustomAuthenticationSuccessHandler;
-import com.example.rock.service.CustomOauth2UserService;
+import com.example.rock.service.CustomOAuth2UserService;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,7 +20,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtFilter jwtFilter;
-    private final CustomOauth2UserService customOauth2UserService;
+    private final CustomOAuth2UserService customOauth2UserService;
     private final CustomAuthenticationSuccessHandler customAuthenticationSuccessHandler;
 
     @Bean
@@ -34,6 +35,13 @@ public class SecurityConfig {
                                 userInfo -> userInfo.userService(customOauth2UserService))
                         .successHandler(customAuthenticationSuccessHandler))
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+                .exceptionHandling(exception ->
+                        exception.authenticationEntryPoint((
+                                request, response, authException) -> {
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                            response.setContentType("application/json");
+                            response.getWriter().write("{\"error\": \"" + authException.getMessage() + "\"}");
+                        }))
                 .build();
     }
 
@@ -41,5 +49,4 @@ public class SecurityConfig {
     public WebSecurityCustomizer webSecurityCustomizer() {
         return web -> web.ignoring().requestMatchers("/", "/h2-console/**");
     }
-
 }

@@ -1,46 +1,45 @@
 package com.example.rock.jwt;
 
+import com.example.rock.service.CustomOAuth2UserService;
 import jakarta.servlet.*;
-import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.Authentication;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
+import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
 @Component
 @RequiredArgsConstructor
-public class JwtFilter extends GenericFilter {
+public class JwtFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
-    private final String AUTHORIZATION_HEADER = "Authorization";
-
+    private final CustomOAuth2UserService userDetailsService;
+    public static final String AUTHORIZATION_HEADER = "Authorization";
 
     @Override
-    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
-        HttpServletRequest httpServletRequest = (HttpServletRequest) request;
-        String jwtToken = getTokenFromCookie(httpServletRequest);
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
+                                    FilterChain filterChain) throws ServletException, IOException {
 
-        if(StringUtils.hasText(jwtToken) && jwtUtil.validToken(jwtToken)) {
-            Authentication authentication = jwtUtil.getAuthentication(jwtToken);
+        String token = request.getHeader(AUTHORIZATION_HEADER);
+
+        if (StringUtils.hasText(token) && jwtUtil.validateToken(token)) {
+            Long userid = jwtUtil.getUserId(token);
+            UserDetails userDetails = userDetailsService.loadUserByUsername(String.valueOf(userid));
+
+            var authentication =
+                    new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
+            // SecurityContext에 인증 정보 설정
             SecurityContextHolder.getContext().setAuthentication(authentication);
         }
-        chain.doFilter(request, response);
-    }
-
-    private String getTokenFromCookie(HttpServletRequest request) {
-        Cookie[] cookies = request.getCookies();
-        if (cookies == null) return null; //Cannot read the array length because "<local4>" is null 에러 해결
-        String token = null;
-        for (Cookie cookie : cookies) {
-            if (cookie.getName().equals(AUTHORIZATION_HEADER)) {
-                token = cookie.getValue();
-                break;
-            }
-        }
-        return token;
+        filterChain.doFilter(request, response);
     }
 }
