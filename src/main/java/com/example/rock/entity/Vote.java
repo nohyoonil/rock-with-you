@@ -27,7 +27,7 @@ public class Vote {
     @JoinColumn(name = "question_id", nullable = false)
     private Question question;
     @Column(name = "opened")
-    private LocalDateTime opened; //피투표자의 투표 정보 열람 여부
+    private boolean opened; //피투표자의 투표 정보 열람 여부
     @Column(nullable = false, name = "created_at")
     private LocalDateTime createdAt; //투표 생성일자(투표일)
 }

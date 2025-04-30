@@ -29,7 +29,8 @@ public class LoginIdArgumentResolver implements HandlerMethodArgumentResolver {
                                   NativeWebRequest webRequest, WebDataBinderFactory binderFactory) throws Exception {
 
         String token = request.getHeader(JwtFilter.AUTHORIZATION_HEADER);
-        jwtUtil.validateToken(token);
+        if (!jwtUtil.validateToken(token))
+            throw new RuntimeException("Invalid token");
 
         return jwtUtil.getUserId(token);
     }
