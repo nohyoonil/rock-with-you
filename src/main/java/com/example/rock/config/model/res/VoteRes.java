@@ -27,7 +27,9 @@ public class VoteRes {
                 .voterId(vote.getVoter().getId())
                 .targetId(vote.getTarget().getId())
                 .questionId(vote.getQuestion().getId())
-                .opened(vote.isOpened()).build();
+                .opened(vote.isOpened())
+                .createdAt(vote.getCreatedAt())
+                .build();
 
     }
 }

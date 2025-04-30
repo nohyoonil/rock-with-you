@@ -31,7 +31,7 @@ public class JwtFilter extends OncePerRequestFilter {
 
         if (StringUtils.hasText(token) && jwtUtil.validateToken(token)) {
             Long userid = jwtUtil.getUserId(token);
-            UserDetails userDetails = userDetailsService.loadUserByUsername(String.valueOf(userid));
+            UserDetails userDetails = userDetailsService.loadUserByUsername(String.valueOf(userid)); //추후에 제거할지 정하기 userDetails 대신 그냥 Id 넣고 db 조회 없애기
 
             var authentication =
                     new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
